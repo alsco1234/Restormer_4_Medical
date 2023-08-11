@@ -12,7 +12,6 @@ from pdb import set_trace as stx
 import gc
 import tensorflow as tf
 from util import *
-import time
 
 # GPU 할당량 최대치의 60%로 제한 => 발열 제어
 config = tf.compat.v1.ConfigProto()
@@ -46,7 +45,7 @@ model_restoration.train()
 # model_restoration.load_state_dict(checkpoint['params'], strict=False)
 
 # second step
-model_restoration.load_state_dict(torch.load('./pts/1_9fine_tuned_model12.pt'))
+model_restoration.load_state_dict(torch.load('./pts/2_9fine_tuned_model12.pt'))
 
 model_restoration.cuda()
 
@@ -64,7 +63,7 @@ for name, param in model_restoration.named_parameters():
 ##########################################
 # 03. PREPARE DATA
 ##########################################
-step = 2
+step = 3
 
 def make_DataPair(step, patch_size, image_nums, batch_size, val=False):
     # 1) folder to patches
@@ -100,12 +99,12 @@ def make_DataPair(step, patch_size, image_nums, batch_size, val=False):
 
 # make dataloader for 4 training and 1 validation
 train_dataloader = []
-train_dataloader.append(make_DataPair(step=2, patch_size=32, image_nums=8, batch_size=8))
-train_dataloader.append(make_DataPair(step=2, patch_size=48, image_nums=8, batch_size=4))
-train_dataloader.append(make_DataPair(step=2, patch_size=64, image_nums=8, batch_size=2))
-train_dataloader.append(make_DataPair(step=2, patch_size=96, image_nums=8, batch_size=1))
+train_dataloader.append(make_DataPair(step=step, patch_size=32, image_nums=8, batch_size=8))
+train_dataloader.append(make_DataPair(step=step, patch_size=48, image_nums=8, batch_size=4))
+train_dataloader.append(make_DataPair(step=step, patch_size=64, image_nums=8, batch_size=2))
+train_dataloader.append(make_DataPair(step=step, patch_size=96, image_nums=8, batch_size=1))
 
-val_dataloader = make_DataPair(step=2, patch_size=96, image_nums=2, batch_size=1, val=True)
+val_dataloader = make_DataPair(step=step, patch_size=96, image_nums=2, batch_size=1, val=True)
 
 
 ##########################################
@@ -116,12 +115,8 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 
 # Define the loss function
 criterion = torch.nn.L1Loss()
-
-# Define the optimizer (weight_decaay = L2 regularization parameter)
 optimizer = torch.optim.AdamW(model_restoration.parameters(), lr=3e-6, betas=(0.9, 0.999), weight_decay=1e-4) # lr = 3e-4, betas=(0.9, 0.999), weight_decay=1e-4                      
-
 num_epochs = 10
-# Define the cosine annealing scheduler
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-8) # eta_min = 1e-6
 
 # Fine-tune the model on your data
