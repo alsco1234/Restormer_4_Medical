@@ -4,6 +4,7 @@
 *.tif
 *.jpg
 *.pth
+*.pt
 *.mat
 *.npy
 .DS_Store

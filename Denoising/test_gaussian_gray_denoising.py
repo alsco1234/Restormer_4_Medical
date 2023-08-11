@@ -1,6 +1,8 @@
 ## Restormer: Efficient Transformer for High-Resolution Image Restoration
 ## Syed Waqas Zamir, Aditya Arora, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang
 ## https://arxiv.org/abs/2111.09881
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 import numpy as np
 import os

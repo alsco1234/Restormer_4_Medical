@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+CUDA_VISIBLE_DEVICES=0
 
 from setuptools import find_packages, setup
 
