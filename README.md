@@ -14,51 +14,16 @@ Fine-tuned by [alsco1234](https://github.com/alsco1234/)
 <img src = "https://i.imgur.com/ulLoEig.png"> 
 
 ## Results
-Experiments are performed for different image processing tasks including, image deraining, single-image motion deblurring, defocus deblurring (both on single image and dual pixel data), and image denoising (both on Gaussian and real data). 
+Result of Gaussian noise on medical image
 
 <details>
-<summary><strong>Image Deraining</strong> (click to expand) </summary>
-
+<summary><strong>Gaussian noise of (Sigma, mean) is (50,0)</strong> (click to expand) </summary>
 <img src = "https://i.imgur.com/mMoqYJi.png"> 
 </details>
 
 <details>
-<summary><strong>Single-Image Motion Deblurring</strong> (click to expand) </summary>
-
-<p align="center"><img src = "https://i.imgur.com/htagDSl.png" width="400"></p></details>
-
-<details>
-<summary><strong>Defocus Deblurring</strong> (click to expand) </summary>
-
-S: single-image defocus deblurring.
-D: dual-pixel defocus deblurring.
-
-<img src = "https://i.imgur.com/sfKnLG2.png"> 
-</details>
-
-
-<details>
-<summary><strong>Gaussian Image Denoising</strong> (click to expand) </summary>
-
-Top super-row: learning a single model to handle various noise levels.
-Bottom super-row: training a separate model for each noise level.
-
-<table>
-  <tr>
-    <td> <img src = "https://i.imgur.com/4vzV8Qy.png" width="400"> </td>
-    <td> <img src = "https://i.imgur.com/Sx986Xs.png" width="500"> </td>
-  </tr>
-  <tr>
-    <td><p align="center"><b>Grayscale</b></p></td>
-    <td><p align="center"><b>Color</b></p></td>
-  </tr>
-</table>
-</details>
-
-<details>
-<summary><strong>Real Image Denoising</strong> (click to expand) </summary>
-
-<img src = "https://i.imgur.com/6v5PRxj.png">
+<summary><strong>Gaussian noise of (Sigma, mean) is (25,0)</strong> (click to expand) </summary>
+<img src = "https://i.imgur.com/mMoqYJi.png"> 
 </details>
 
 ## Installation
