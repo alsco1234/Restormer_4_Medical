@@ -58,7 +58,7 @@ model_restoration = Restormer(**x['network_g'])
 #model_restoration.load_state_dict(checkpoint['params'])
 
 # Fine-Tuned Weight
-model_restoration.load_state_dict(torch.load('./pts/0_16fine_tuned_model11.pt'))
+model_restoration.load_state_dict(torch.load('./pts/2_9fine_tuned_model13.pt')) #최종 :  2_9, model13
 
 print("model_restoration.cuda()")
 model_restoration.cuda()
@@ -70,14 +70,16 @@ model_restoration.eval()
 ##########################################
 # 03. EVALUATE
 ##########################################
-folderpath = 'C:/Users/NDT/Desktop/Image_denoising/Data/test_patches_2/gaussian/Chest1(3072_3072)_IP.dcm.png'
-out_dir = './test_if_training_oneimage/'
+folderpath = 'C:/Users/NDT/Desktop/Image_denoising/Data/test_patches_85/gaussian_sig25/Chest1(3072_3072)_IP.dcm.png'
+out_dir = './sig25/Chest1(3072_3072)_IP.dcm.png/'
+
+#os.mkdir('./sig25/Chest1(3072_3072)_IP.dcm.png/')
 
 for patch in os.listdir(folderpath):    
     patchpath = os.path.join(folderpath, patch)
     
     # GPU 발열로 인한 제어
-    time.sleep(0.3)
+    # time.sleep(1)
     
     print('start path : ', patchpath)
     
@@ -85,18 +87,19 @@ for patch in os.listdir(folderpath):
     #img = cv2.cvtColor(cv2.imread(patchpath), cv2.COLOR_BGR2RGB)
     #input_ = torch.from_numpy(img).float().div(255.).permute(2,0,1).unsqueeze(0)
     # IF GRAY
-    img = cv2.cvtColor(cv2.imread(patchpath), cv2.COLOR_BGR2RGB)
-    input_ = torch.from_numpy(img).float().div(255.).permute(2,0,1).unsqueeze(0)
+    img = cv2.cvtColor(cv2.imread(patchpath), cv2.COLOR_BGR2GRAY)
+    input_ = torch.from_numpy(img).float().div(255.).unsqueeze(0).unsqueeze(0)
+    input_ = input_.cuda()
     
-    with torch.no_grad():
-        input_ = input_.cuda()
+    with torch.no_grad(): 
         restored = model_restoration(input_) # input (1, 1, 256, 256)
-        restored = restored.cpu()
 
+    restored = restored.cpu()
     res_img = restored.transpose(0, 2).transpose(1, 3).transpose(2, 3).squeeze()
     res_image = (res_img).detach().numpy()
     pred_img = np.uint8(res_image * 255.0)
+    
     # IF GRAY
-    cv2.cvtColor(pred_img, cv2.COLOR_RGB2GRAY)
+    # cv2.cvtColor(pred_img, cv2.COLOR_RGB2GRAY)
 
     cv2.imwrite(out_dir+patch, pred_img)

@@ -54,7 +54,7 @@ def folder_to_patches(folder_path, patch_size, step, size):
     if i < size*step:
       continue
     
-    img = cv2.imread(os.path.join(folder_path, filename))
+    img = cv2.imread(os.path.join(folder_path, filename), cv2.IMREAD_GRAYSCALE)
     this_patches = img_to_patches(img, patch_size)
     patches.extend(this_patches)
     del img, this_patches
@@ -80,13 +80,13 @@ def divide_patches(image, patch_size=256, overlap_size=4):
     padded_image_width = (y_axis_patches - 1) * step_size + patch_size
     
     # Initialize the padded image array
-    padded_image = np.zeros((padded_image_height, padded_image_width, image.shape[2]))
+    padded_image = np.zeros((padded_image_height, padded_image_width))
     
     # Copy the input image into the padded image array
     padded_image[:image.shape[0], :image.shape[1]] = image
     
     # Initialize the patches array
-    patches = np.zeros((x_axis_patches, y_axis_patches, patch_size, patch_size, padded_image.shape[2]))
+    patches = np.zeros((x_axis_patches, y_axis_patches, patch_size, patch_size))
     
     # Iterate over the patches and extract them from the padded image
     for i in range(x_axis_patches):

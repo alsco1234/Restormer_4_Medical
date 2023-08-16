@@ -19,10 +19,10 @@ def ssim_between(origin, denoised):
 
 # 영상 하나 test하고 visualize하기
 
-noisy = cv2.imread('C:/Users/NDT/Desktop/Image_denoising/Data/test/gaussian/Chest1(3072_3072)_IP.dcm.png', cv2.IMREAD_GRAYSCALE)
+noisy = cv2.imread('C:/Users/NDT/Desktop/Image_denoising/Data/test/gaussian/Foot AP(2804_2292)_IP.dcm.png', cv2.IMREAD_GRAYSCALE)
 print(noisy)
-origin = cv2.imread('C:/Users/NDT/Desktop/Image_denoising/Data/test/origin/Chest1(3072_3072)_IP.dcm.png', cv2.IMREAD_GRAYSCALE)
-denoised = cv2.imread('C:/Users/NDT/Desktop/Image_denoising/Chest1_restormer11_merging_85.png', cv2.IMREAD_GRAYSCALE)
+origin = cv2.imread('C:/Users/NDT/Desktop/Image_denoising/Data/test/origin/Foot AP(2804_2292)_IP.dcm.png', cv2.IMREAD_GRAYSCALE)
+denoised = cv2.imread('C:/Users/NDT/Desktop/Image_denoising/Restormer/Denoising/FootAP.png', cv2.IMREAD_GRAYSCALE)
 '''
 # bit수준 24 => 8로 맞추기. 이때도 같은 방법 사용
 denoised_8 = denoised - denoised.min()
