@@ -1,26 +1,12 @@
 
-# Restormer: Efficient Transformer for High-Resolution Image Restoration (CVPR 2022 -- Oral)
+# Fine-Tuning Restormer for Medical Image Denoising
 
-[Syed Waqas Zamir](https://scholar.google.es/citations?user=WNGPkVQAAAAJ&hl=en), [Aditya Arora](https://adityac8.github.io/), [Salman Khan](https://salman-h-khan.github.io/), [Munawar Hayat](https://scholar.google.com/citations?user=Mx8MbWYAAAAJ&hl=en), [Fahad Shahbaz Khan](https://scholar.google.es/citations?user=zvaeYnUAAAAJ&hl=en), and [Ming-Hsuan Yang](https://scholar.google.com/citations?user=p9-ohHsAAAAJ&hl=en)
-
-[![paper](https://img.shields.io/badge/arXiv-Paper-<COLOR>.svg)](https://arxiv.org/abs/2111.09881)
-[![supplement](https://img.shields.io/badge/Supplementary-Material-red)](https://drive.google.com/file/d/1oKGON8vG4uDWMmZKqHeTMnFowhOubifK/view?usp=sharing)
-[![video](https://img.shields.io/badge/Video-Presentation-F9D371)](https://www.youtube.com/watch?v=3mqu6N4_0pY&t)
-[![slides](https://img.shields.io/badge/Presentation-Slides-B762C1)](https://drive.google.com/file/d/19wKhnQtr3mcD6IsLj0ZFSwCgIRKUkDQJ/view?usp=sharing)
-[![Summary](https://img.shields.io/badge/Summary-Slide-87CEEB)](https://drive.google.com/file/d/1wyKAMLzJpDqHiF6AMsmnmGQC241GyT8q/view?usp=sharing)
-
-
-#### News
-- **April 4, 2022:** Integrated into [Huggingface Spaces 🤗](https://huggingface.co/spaces) using [Gradio](https://github.com/gradio-app/gradio). Try out the web demo: [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/swzamir/Restormer)
-- **March 30, 2022:** Added Colab Demo. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1C2818h7KnjNv4R1sabe14_AYL7lWhmu6?usp=sharing)
-- **March 29, 2022:** Restormer is selected for an ORAL presentation at CVPR 2022 :dizzy:
-- **March 10, 2022:** Training codes are released :fire:
-- **March 3, 2022:** Paper accepted at CVPR 2022 :tada: 
-- **Nov 21, 2021:** Testing codes and pre-trained models are released!
+The origin model is [Restormer](https://github.com/swz30/Restormer)   
+Fine-tuned by [alsco1234](https://github.com/alsco1234/)
 
 <hr />
 
-> **Abstract:** *Since convolutional neural networks (CNNs) perform well at learning generalizable image priors from large-scale data, these models have been extensively applied to image restoration and related tasks. Recently, another class of neural architectures, Transformers, have shown significant performance gains on natural language and high-level vision tasks. While the Transformer model mitigates the shortcomings of CNNs (i.e., limited receptive field and inadaptability to input content), its computational complexity grows quadratically with the spatial resolution, therefore making it infeasible to apply to most image restoration tasks involving high-resolution images. In this work, we propose an efficient Transformer model by making several key designs in the building blocks (multi-head attention and feed-forward network) such that it can capture long-range pixel interactions, while still remaining applicable to large images. Our model, named Restoration Transformer (Restormer), achieves state-of-the-art results on several image restoration tasks, including image deraining, single-image motion deblurring, defocus deblurring (single-image and dual-pixel data), and image denoising (Gaussian grayscale/color denoising, and real image denoising).* 
+> 최근 딥러닝 기술이 발전하면서 의료 이미지의 노이즈를 신경망을 이용하여 제거하는 방법이 요구된다. 특히 X-ray영상에서 전자의 불규칙한 흐름으로 발생하는 real noise를 artifacts 없이 제거하는 기술이 필요하다. 따라서 본 프로젝트에서는 grayscale image denoising task에서 우수한 성능을 보인 Restormer(Restoration Transformer)모델을 개선하여 의료 영상에 적용하였다. Restormer는 CNN과 달리 local 정보 뿐 아니라 전역 정보를 함께 계산하며, 입력 크기에 제한이 없다는 장점이 있다. 그러나 모델의 크기가 크다는 단점이 있다. 이를 고려하여 본 프로젝트에서는 fine-tuning시 Transformer의 block 수는 줄이고 attention layer만 학습시켜 artifacts 생성 없이 노이즈만 제거할 수 있게 했다.
 <hr />
 
 ## Network Architecture
@@ -138,7 +124,6 @@ Bottom super-row: training a separate model for each noise level.
 </details>
 
 ## Citation
-If you use Restormer, please consider citing:
 
     @inproceedings{Zamir2021Restormer,
         title={Restormer: Efficient Transformer for High-Resolution Image Restoration}, 
@@ -150,13 +135,8 @@ If you use Restormer, please consider citing:
 
 
 ## Contact
-Should you have any question, please contact waqas.zamir@inceptioniai.org
+Should you have any question, please contact alsco4321@gmail.com
 
 
-**Acknowledgment:** This code is based on the [BasicSR](https://github.com/xinntao/BasicSR) toolbox and [HINet](https://github.com/megvii-model/HINet). 
-
-## Our Related Works
-- Learning Enriched Features for Fast Image Restoration and Enhancement, TPAMI 2022. [Paper](https://www.waqaszamir.com/publication/zamir-2022-mirnetv2/) | [Code](https://github.com/swz30/MIRNetv2)
-- Multi-Stage Progressive Image Restoration, CVPR 2021. [Paper](https://arxiv.org/abs/2102.02808) | [Code](https://github.com/swz30/MPRNet)
-- Learning Enriched Features for Real Image Restoration and Enhancement, ECCV 2020. [Paper](https://arxiv.org/abs/2003.06792) | [Code](https://github.com/swz30/MIRNet)
-- CycleISP: Real Image Restoration via Improved Data Synthesis, CVPR 2020. [Paper](https://arxiv.org/abs/2003.07761) | [Code](https://github.com/swz30/CycleISP)
+## My Related Works
+- Grayscale Image Denoising | [Code](https://github.com/alsco1234/Image_Denoising) 
