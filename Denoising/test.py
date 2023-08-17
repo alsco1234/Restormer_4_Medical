@@ -83,8 +83,9 @@ denoised = final_image[:origin.shape[0], :origin.shape[1]]
 
 
 # 3) Save Result Image
-filename = args.noisy_path.strip('/')[:-1]
+filename = (args.noisy_path.split('/')[-1]).split('.')[0]
 cv2.imwrite((args.result_path + filename + '_DENOISED.png'), denoised)
+print((args.result_path + filename + '_DENOISED.png'))
 
 
 ##########################################
