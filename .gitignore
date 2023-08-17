@@ -4,7 +4,6 @@
 *.tif
 *.jpg
 *.pth
-*.pt
 *.mat
 *.npy
 *.gitignore
