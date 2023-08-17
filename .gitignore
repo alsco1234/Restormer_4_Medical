@@ -7,5 +7,6 @@
 *.pt
 *.mat
 *.npy
+*.gitignore
 .DS_Store
 
