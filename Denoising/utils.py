@@ -1,11 +1,11 @@
 import numpy as np
 import math
 from skimage.metrics import structural_similarity as compare_ssim
-from basicsr.models.archs.restormer_arch import Restormer
-from pdb import set_trace as stx
 import math
 import gc
 import tensorflow as tf
+import os
+import cv2
 
 
 ##########################################
@@ -66,18 +66,6 @@ def to_sequence(_Patches):
 # 03. PATCHING AND MERGING
 ##########################################
 def divide_patches(image, patch_size=256, overlap_size=4):
-    """
-    DIVIDE IMAGES INTO PATHCES
-    THIS PATCEHS MUST HAVE DUPLICARTED AREA
-    
-    [INPUT]
-    image: (H, W, C) : numpy array
-    patch_size : N : default = img2.shape[0]
-    overlap_size : duplication factor : default = 4
-    
-    [OUTPUT]
-    patches: (X, Y, PH, PW, C) : numpy array
-    """
     step_size = patch_size - overlap_size
 
     x_axis_patches = np.ceil((image.shape[0] - overlap_size) / step_size).astype(int)
@@ -146,7 +134,18 @@ def concat_v(img1, img2):
 
 
 def merge_patches(patches):
-    return image
+    horizontal_concatenated = []
+    for i in range(patches.shape[0]):
+        row = patches[i][0]
+        for j in range(1, patches.shape[1]):
+            row = concat_h(row, patches[i][j])
+        horizontal_concatenated.append(row)
+
+    final_image = horizontal_concatenated[0]
+    for i in range(1, len(horizontal_concatenated)):
+        final_image = concat_v(final_image, horizontal_concatenated[i])
+        
+    return final_image
 
 
 ##########################################
