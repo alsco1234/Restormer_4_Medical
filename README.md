@@ -58,7 +58,7 @@ python test.py --origin_path 'PATH_TO_ORIGIN_IMAGE' --noisy_path 'PATH_TO_NOISY_
 It prints psnr and ssim between origin and noisy image, both before and after. And also save denoised image.
 
 ## Training
-To Training no pretraiend weight
+To Training no pretraiend weight. It have train data. all noise is gaussian (sigma, mean) = (50,0)
 ```
 python train.py
 ```

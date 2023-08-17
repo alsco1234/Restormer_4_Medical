@@ -17,10 +17,10 @@ str_time = time.time()
 parser = argparse.ArgumentParser(description='Grayscale Denoising using fine-tuned Restormer')
 
 parser.add_argument('--step', default=0, type=int, help='Path of noisy images')
-parser.add_argument('--test_origin_folder ', default='C:/Users/NDT/Desktop/Image_denoising/Data/val/origin/', type=str, help='Path of test origin folder')
-parser.add_argument('--test_noisy_folder', default='C:/Users/NDT/Desktop/Image_denoising/Data/val/origin/', type=str, help='Path of test noisy folder')
-parser.add_argument('--val_origin_folder', default='C:/Users/NDT/Desktop/Image_denoising/Data/val/origin/', type=str, help='Path of validation origin folder')
-parser.add_argument('--val_noisy_folder', default='C:/Users/NDT/Desktop/Image_denoising/Data/val/origin/', type=str, help='Path of  validation noisy folder')
+parser.add_argument('--test_origin_folder', default='./data/test/origin/', type=str, help='Path of test origin folder')
+parser.add_argument('--test_noisy_folder', default='./data/test/noisy/', type=str, help='Path of test noisy folder')
+parser.add_argument('--val_origin_folder', default='./data/val/origin/', type=str, help='Path of validation origin folder')
+parser.add_argument('--val_noisy_folder', default='./data/val/noisy/', type=str, help='Path of  validation noisy folder')
 parser.add_argument('--pretrained', default=False, type=bool, help='If you want to test pretrained, not fine tuned weight')
 args = parser.parse_args()
 
@@ -43,7 +43,6 @@ def make_DataPair(step, patch_size, image_nums, batch_size, val=False):
         # 2) Make Sequence
         X_Patches = to_sequence(X_Patches)
         y_Patches = to_sequence(y_Patches)
-        print("Patches.shape : ", X_Patches.shape) # (n, 256, 256, 3)
 
         # 3) Normalization
         X_Patches = np.array(X_Patches, dtype = object).astype(float) / 255.0

@@ -14,9 +14,9 @@ from utils import divide_patches, merge_patches, psnr_between, ssim_between
 
 parser = argparse.ArgumentParser(description='Grayscale Denoising using fine-tuned Restormer')
 
-parser.add_argument('--origin_path', default='C:/Users/NDT/Desktop/Image_denoising/Data/test/origin/Chest4(2957_2887)_IP.dcm.png', type=str, help='Path of noisy images')
-parser.add_argument('--noisy_path', default='C:/Users/NDT/Desktop/Image_denoising/Data/test/gaussian/Chest4(2957_2887)_IP.dcm.png', type=str, help='Path of noisy images')
-parser.add_argument('--result_path', default='./', type=str, help='Path for save denoised image')
+parser.add_argument('--origin_path', default='./data/test/origin/Chest1.png', type=str, help='Path of noisy images')
+parser.add_argument('--noisy_path', default='./data/test/noisy/Chest1.png', type=str, help='Path of noisy images')
+parser.add_argument('--result_path', default='./result/', type=str, help='Path for save denoised image')
 parser.add_argument('--pretrained', default=False, type=bool, help='If you want to test pretrained, not fine tuned weight')
 args = parser.parse_args()
 
@@ -83,7 +83,8 @@ denoised = final_image[:origin.shape[0], :origin.shape[1]]
 
 
 # 3) Save Result Image
-cv2.imwrite(os.path.join(args.result_path, args.noisy_path+'__DENOISED.png'), denoised)
+filename = args.noisy_path.strip('/')[:-1]
+cv2.imwrite((args.result_path + filename + '_DENOISED.png'), denoised)
 
 
 ##########################################

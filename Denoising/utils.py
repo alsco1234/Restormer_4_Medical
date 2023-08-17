@@ -183,7 +183,14 @@ def folder_to_patches(folder_path, patch_size, step, size):
 # TEST FUNCTIONS
 ##########################################
 if __name__ == "__main__":
-    origin_image_path = './'
-    origin_image = cv2.imread(origin_image_path)
+    test_img = cv2.imread('./data/test/origin/Chest1.png')
     
-    patches = divide_patches(origin_image, patch_size=img2.shape[0], overlap_size=85)
+    patches = divide_patches(test_img)
+    
+    cv2.imshow("patches[0][0]", patches[0][0])
+    cv2.waitKey(0)
+    
+    merged_img = merge_patches(patches)
+    
+    cv2.imshow("merged_img", merged_img)
+    cv2.waitKey(0)
