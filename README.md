@@ -18,12 +18,27 @@ Result of Gaussian noise on medical image
 
 <details>
 <summary><strong>Gaussian noise of (Sigma, mean) is (50,0)</strong> (click to expand) </summary>
-<img src = "https://i.imgur.com/mMoqYJi.png"> 
+<img src = ./docs/result_sig50.png> 
 </details>
 
 <details>
 <summary><strong>Gaussian noise of (Sigma, mean) is (25,0)</strong> (click to expand) </summary>
-<img src = "https://i.imgur.com/mMoqYJi.png"> 
+<img src = ./docs/result_sig25.png> 
+</details>
+
+<details>
+<summary><strong>Gaussian noise of (Sigma, mean) is (15,0)</strong> (click to expand) </summary>
+<img src = ./docs/result_sig15.png> 
+</details>
+
+<details>
+<summary><strong>Gaussian noise of (Sigma, mean) is (10,0)</strong> (click to expand) </summary>
+<img src = ./docs/result_sig10.png> 
+</details>
+
+<details>
+<summary><strong>Gaussian noise of (Sigma, mean) is (5,0)</strong> (click to expand) </summary>
+<img src = ./docs/result_sig5.png> 
 </details>
 
 ## Installation
@@ -32,16 +47,15 @@ See [INSTALL.md](INSTALL.md) for the installation of dependencies required to ru
 
 ## Test
 
-To test the Fine-Tuned Restormer models of 255*255 one patch
+To test the Fine-Tuned Restormer models of 512*512 patch. Since Restormer is a model based on transformer, You can set other patch_size and overlap_size editing test.py. but make sure patch size is divided by 8. This code will work in grayscale image (FOR COLOR IMAGE CODE WILL BE SOON)
 ```
-python test_if_training.py
+python test.py --origin_path 'PATH_TO_ORIGIN_IMAGE' --noisy_path 'PATH_TO_NOISY_IMAGE'
 ```
 To test the Fine-Tuned Restormer models of one image
 ```
-python prepare_dataset.py
-python test_one.py
-python blending.py
+python test.py --origin_path 'PATH_TO_ORIGIN_IMAGE' --noisy_path 'PATH_TO_NOISY_IMAGE' --prestrained True
 ```
+It prints psnr and ssim between origin and noisy image, both before and after. And also save denoised image.
 
 ## Training
 To Training no pretraiend weight
@@ -70,4 +84,5 @@ Should you have any question, please contact alsco4321@gmail.com
 
 
 ## My Related Works
-- Grayscale Image Denoising | [Code](https://github.com/alsco1234/Image_Denoising) 
+- Image Denoising | [Code](https://github.com/alsco1234/Image_Denoising) 
+- CNN | [Code](https://github.com/alsco1234/CNN)
