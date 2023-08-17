@@ -1,90 +1,201 @@
-## Restormer: Efficient Transformer for High-Resolution Image Restoration
-## Syed Waqas Zamir, Aditya Arora, Salman Khan, Munawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang
-## https://arxiv.org/abs/2111.09881
-
 import numpy as np
-import os
-import cv2
+import math
+from skimage.metrics import structural_similarity as compare_ssim
+from basicsr.models.archs.restormer_arch import Restormer
+from pdb import set_trace as stx
 import math
 
-def calculate_psnr(img1, img2, border=0):
-    # img1 and img2 have range [0, 255]
-    #img1 = img1.squeeze()
-    #img2 = img2.squeeze()
-    if not img1.shape == img2.shape:
-        raise ValueError('Input images must have the same dimensions.')
-    h, w = img1.shape[:2]
-    img1 = img1[border:h-border, border:w-border]
-    img2 = img2[border:h-border, border:w-border]
+#import matplotlib.pyplot as plt
+import gc
+import tensorflow as tf
 
-    img1 = img1.astype(np.float64)
-    img2 = img2.astype(np.float64)
-    mse = np.mean((img1 - img2)**2)
+##########################################
+# 01. DENOISING METRICS
+##########################################
+def psnr_between(origin, denoised):
+    mse = np.mean( (origin - denoised) ** 2 ) #MSE
     if mse == 0:
-        return float('inf')
-    return 20 * math.log10(255.0 / math.sqrt(mse))
+        return 100
+    PIXEL_MAX = 255.0
+    return 20 * math.log10(PIXEL_MAX / math.sqrt(mse)) #PSNR
 
 
-# --------------------------------------------
-# SSIM
-# --------------------------------------------
-def calculate_ssim(img1, img2, border=0):
-    '''calculate SSIM
-    the same outputs as MATLAB's
-    img1, img2: [0, 255]
-    '''
-    #img1 = img1.squeeze()
-    #img2 = img2.squeeze()
-    if not img1.shape == img2.shape:
-        raise ValueError('Input images must have the same dimensions.')
-    h, w = img1.shape[:2]
-    img1 = img1[border:h-border, border:w-border]
-    img2 = img2[border:h-border, border:w-border]
-
-    if img1.ndim == 2:
-        return ssim(img1, img2)
-    elif img1.ndim == 3:
-        if img1.shape[2] == 3:
-            ssims = []
-            for i in range(3):
-                ssims.append(ssim(img1[:,:,i], img2[:,:,i]))
-            return np.array(ssims).mean()
-        elif img1.shape[2] == 1:
-            return ssim(np.squeeze(img1), np.squeeze(img2))
-    else:
-        raise ValueError('Wrong input image dimensions.')
+def ssim_between(origin, denoised):
+    score, diff = compare_ssim(origin, denoised, full=True)
+    diff = (diff * 255).astype("uint8")
+    return score
 
 
-def ssim(img1, img2):
-    C1 = (0.01 * 255)**2
-    C2 = (0.03 * 255)**2
+##########################################
+# 02. DATALOADERS
+##########################################
+class Dataloder(tf.keras.utils.Sequence):
+    def __init__(self, X,y,batch_size=1, shuffle=False):
+        self.X = X
+        self.y = y
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.indexes = np.arange(len(X))
 
-    img1 = img1.astype(np.float64)
-    img2 = img2.astype(np.float64)
-    kernel = cv2.getGaussianKernel(11, 1.5)
-    window = np.outer(kernel, kernel.transpose())
+    def __getitem__(self, i):
+        # collect batch data
+        batch_x = self.X[i * self.batch_size : (i+1) * self.batch_size]
+        batch_y = self.y[i * self.batch_size : (i+1) * self.batch_size]
 
-    mu1 = cv2.filter2D(img1, -1, window)[5:-5, 5:-5]  # valid
-    mu2 = cv2.filter2D(img2, -1, window)[5:-5, 5:-5]
-    mu1_sq = mu1**2
-    mu2_sq = mu2**2
-    mu1_mu2 = mu1 * mu2
-    sigma1_sq = cv2.filter2D(img1**2, -1, window)[5:-5, 5:-5] - mu1_sq
-    sigma2_sq = cv2.filter2D(img2**2, -1, window)[5:-5, 5:-5] - mu2_sq
-    sigma12 = cv2.filter2D(img1 * img2, -1, window)[5:-5, 5:-5] - mu1_mu2
+        return tuple((batch_x,batch_y))
 
-    ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) *
-                                                            (sigma1_sq + sigma2_sq + C2))
-    return ssim_map.mean()
+    def __len__(self):
+        return len(self.indexes) // self.batch_size
 
-def load_img(filepath):
-    return cv2.cvtColor(cv2.imread(filepath), cv2.COLOR_BGR2RGB)
+    def on_epoch_end(self):
+        if self.shuffle:
+            self.indexes = np.random.permutation(self.indexes)
+            
 
-def save_img(filepath, img):
-    cv2.imwrite(filepath,cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+def to_sequence(_Patches):
+    seq_patches = [_Patches[0]]
 
-def load_gray_img(filepath):
-    return np.expand_dims(cv2.imread(filepath, cv2.IMREAD_GRAYSCALE), axis=2)
+    for i in range(1, len(_Patches)):
+        seq_patches.append(_Patches[i])
+        print("to_sequence file: [", i , "] progress: ", i ,end='                                                       \r ')
 
-def save_gray_img(filepath, img):
-    cv2.imwrite(filepath, img)
+    seq_patches = np.concatenate(seq_patches, axis=0)
+    return seq_patches
+
+
+##########################################
+# 03. PATCHING AND MERGING
+##########################################
+def divide_patches(image, patch_size=256, overlap_size=4):
+    """
+    DIVIDE IMAGES INTO PATHCES
+    THIS PATCEHS MUST HAVE DUPLICARTED AREA
+    
+    [INPUT]
+    image: (H, W, C) : numpy array
+    patch_size : N : default = 256
+    overlap_size : duplication factor : default = 4
+    
+    [OUTPUT]
+    patches: (X, Y, PH, PW, C) : numpy array
+    """
+    
+    # 각 축에 대한 스텝 크기 계산
+    step_size = patch_size - overlap_size
+    
+    # 각 축의 패치 수 계산
+    x_axis_patches = np.ceil((image.shape[0] - overlap_size) / step_size).astype(int)
+    y_axis_patches = np.ceil((image.shape[1] - overlap_size) / step_size).astype(int)
+    
+    # 패딩된 이미지의 크기 계산
+    padded_image_height = (x_axis_patches - 1) * step_size + patch_size
+    padded_image_width = (y_axis_patches - 1) * step_size + patch_size
+    
+    # 미러 패딩으로 패딩된 이미지 배열 초기화
+    padded_image = np.pad(image, ((0, padded_image_width), (0, padded_image_height)), mode='reflect')
+    
+    # 입력 이미지를 패딩된 이미지 배열에 복사
+    padded_image[:image.shape[0], :image.shape[1]] = image
+    
+    # 패치 배열 초기화
+    patches = np.zeros((x_axis_patches, y_axis_patches, patch_size, patch_size))
+    
+    # 패치를 추출하여 패딩된 이미지에서 가져옴
+    for i in range(x_axis_patches):
+        for j in range(y_axis_patches):
+            x_start = i * step_size
+            y_start = j * step_size
+            
+            patches[i, j] = padded_image[x_start:x_start+patch_size, y_start:y_start+patch_size]
+    
+    return patches
+
+
+def concat_h(img1, img2):
+    for x in range(0, img1.shape[0]):
+        for y in range(0, img1.shape[1]):
+            if y > img1.shape[1]-85:
+                img1[x][y] = img1[x][y] * (-(y-img1.shape[1]-1)/85) ## -1하는게 보기에 제일 ㄱㅊ았음
+                
+    for x in range(0, len(img2)):
+        for y in range(0, len(img2)):
+            if y < 85:
+                img2[x][y] = img2[x][y] * ((y)/85) ## 예를 y+1하는게 논리적으론 맞는데.. 보기에 이상해짐 ㅠ
+                
+
+    img3 = np.zeros((256, img1.shape[1]+256-85), np.uint8)
+
+    for x in range(0, 256):
+        for y in range(0, img1.shape[1]+256-85):
+            if y < img1.shape[1]:
+                img3[x][y] += img1[x][y]
+                
+            if y > (img1.shape[1]-85):
+                img3[x][y] += img2[x][y-(img1.shape[1]-85)]
+                
+    return img3
+
+        
+def concat_v(img1, img2):
+    for x in range(0, img1.shape[0]):
+        for y in range(0, img1.shape[1]):
+            if x > img1.shape[0] - 85:
+                img1[x][y] = img1[x][y] * (-(x - img1.shape[0]-1) / 85) ##
+
+    for x in range(0, len(img2)):
+        for y in range(0, len(img2[0])):
+            if x < 85:
+                img2[x][y] = img2[x][y] * (x / 85)
+
+    img3 = np.zeros((img1.shape[0] + img2.shape[0] - 85, img1.shape[1]), np.uint8)
+
+    for x in range(0, img1.shape[0] + img2.shape[0] - 85):
+        for y in range(0, img1.shape[1]):
+            if x < img1.shape[0]:
+                img3[x][y] += img1[x][y]
+
+            if x > (img1.shape[0] - 85):
+                img3[x][y] += img2[x - (img1.shape[0] - 85)][y]
+
+    return img3
+
+
+##########################################
+# 04. USING FOLDER
+##########################################
+def img_to_patches(img, patch_size):
+  patches = divide_patches(img, patch_size, overlap_size=4)
+  return patches
+
+
+def folder_to_patches(folder_path, patch_size, step, size):
+  patches = []
+
+  i=1
+  for filename in os.listdir(folder_path):
+    i+=1
+    # test
+    if i < size*step:
+      continue
+    
+    img = cv2.imread(os.path.join(folder_path, filename), cv2.IMREAD_GRAYSCALE)
+    this_patches = img_to_patches(img, patch_size)
+    patches.extend(this_patches)
+    del img, this_patches
+    gc.collect()
+    #print("file: [", folder_path, filename, "] progress: ", i ,end='                                                       \r ')
+    
+    if i > size*(step+1):
+      break
+
+  return patches
+
+
+##########################################
+# TEST FUNCTIONS
+##########################################
+if __name__ == "__main__":
+    origin_image_path = 'C:/Users/NDT/Desktop/Image_denoising/Data/test/origin/Chest1(3072_3072)_IP.dcm.png'
+    origin_image = cv2.imread(origin_image_path)
+    
+    patches = divide_patches(origin_image, patch_size=256, overlap_size=85)

@@ -13,16 +13,19 @@ import gc
 import tensorflow as tf
 from util import *
 import time
+import datetime
 
 # GPU 할당량 최대치의 60%로 제한 => 발열 제어
 config = tf.compat.v1.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.6
 session = tf.compat.v1.Session(config=config)
 
+str_time = time.time()
+
 ##########################################
 # 01. LOAD YAML
 ##########################################
-yaml_file = 'Options/RealDenoising_Restormer.yml'
+yaml_file = 'Options/RealDenoising_Restormer_small.yml'
 import yaml
 
 try:
@@ -42,11 +45,11 @@ model_restoration = Restormer(**x['network_g'])
 model_restoration.train()
 
 # first step
-checkpoint = torch.load('./pretrained_models/real_denoising.pth')
-model_restoration.load_state_dict(checkpoint['params'])
+#checkpoint = torch.load('./pretrained_models/gaussian_gray_denoising_blind.pth')
+#model_restoration.load_state_dict(checkpoint['params'], strict=False)
 
 # second step
-# model_restoration.load_state_dict(torch.load('./pts/0_29fine_tuned_model7.pt'))
+model_restoration.load_state_dict(torch.load('./pts/2_9fine_tuned_model13.pt'))
 
 model_restoration.cuda()
 
@@ -64,48 +67,48 @@ for name, param in model_restoration.named_parameters():
 ##########################################
 # 03. PREPARE DATA
 ##########################################
-# 1) folder to patches
-with tf.device('/device:GPU:0'):
-    #  8163 / 100 = 80
-    #  2040 / 25 = 80
-    step = 0 #[0, 40]
-    X_Train_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/train/origin/', 48, step, size=8)
-    y_Train_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/train/gaussian/', 48, step, size=8)
-    X_Val_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/val/origin/', 48, step, size=2)
-    y_Val_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/val/gaussian/',48, step, size=2)
+step = 3
 
-    # 2) Make Sequence
-    X_Train_Patches = to_sequence(X_Train_Patches)
-    print("X_Train_Patches.shape : ", X_Train_Patches.shape) # (n, 256, 256, 3)
-    y_Train_Patches = to_sequence(y_Train_Patches)
-    print("y_Train_Patches.shape : ", y_Train_Patches.shape) # (n, 256, 256, 3)
-    X_Val_Patches = to_sequence(X_Val_Patches)
-    print("X_Val_Patches.shape : ", X_Val_Patches.shape) # (n, 256, 256, 3)
-    y_Val_Patches = to_sequence(y_Val_Patches)
-    print("y_Val_Patches.shape : ", y_Val_Patches.shape) # (n, 256, 256, 3)
+def make_DataPair(step, patch_size, image_nums, batch_size, val=False):
+    # 1) folder to patches
+    with tf.device('/device:GPU:0'):
+        #  8163 / 8 = 1000
+        #  2040 / 2 = 1000
+        step = step #[0, 1000]
+        if val:
+            X_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/val/origin/', patch_size, step, size=image_nums)
+            y_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/val/gaussian/',patch_size, step, size=image_nums)
+        else:
+            X_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/train/origin/', patch_size, step, size=image_nums)
+            y_Patches = folder_to_patches('C:/Users/NDT/Desktop/Image_denoising/Data/train/gaussian/', patch_size, step, size=image_nums)
 
-    # 3) Normalization
-    X_Train_Data = np.array(X_Train_Patches, dtype = object).astype(float) / 255.0
-    print("finising normalizate X_Train_Data")
-    y_Train_Data = np.array(y_Train_Patches, dtype = object).astype(float) / 255.0
-    print("finising normalizate y_Train_Data")
-    X_Val_Data = np.array(X_Val_Patches, dtype = object).astype(float) / 255.0
-    print("finising normalizate X_Val_Data")
-    y_Val_Data = np.array(y_Val_Patches, dtype = object).astype(float) / 255.0
-    print("finising normalizate y_Val_Data")
+        # 2) Make Sequence
+        X_Patches = to_sequence(X_Patches)
+        y_Patches = to_sequence(y_Patches)
+        print("Patches.shape : ", X_Patches.shape) # (n, 256, 256, 3)
 
-del X_Train_Patches, y_Train_Patches, X_Val_Patches, y_Val_Patches
-gc.collect()
-torch.cuda.empty_cache()
+        # 3) Normalization
+        X_Patches = np.array(X_Patches, dtype = object).astype(float) / 255.0
+        y_Patches = np.array(y_Patches, dtype = object).astype(float) / 255.0
 
-# 4) Tie Ground_Truth and Noisy
-batch_size = 4
-train_dataloader = Dataloder(X_Train_Data, y_Train_Data, batch_size, shuffle=True)
-val_dataloader = Dataloder(X_Val_Data, y_Val_Data, batch_size, shuffle=True)
+    # 4) Tie Ground_Truth and Noisy
+    batch_size = batch_size
+    _dataloader = Dataloder(X_Patches, y_Patches, batch_size, shuffle=True)
 
-del X_Train_Data, y_Train_Data, X_Val_Data, y_Val_Data
-gc.collect()
-torch.cuda.empty_cache()
+    del X_Patches, y_Patches
+    gc.collect()
+    torch.cuda.empty_cache()
+    
+    return _dataloader
+
+# make dataloader for 4 training and 1 validation
+train_dataloader = []
+train_dataloader.append(make_DataPair(step=step, patch_size=32, image_nums=8, batch_size=8))
+train_dataloader.append(make_DataPair(step=step, patch_size=48, image_nums=8, batch_size=4))
+train_dataloader.append(make_DataPair(step=step, patch_size=64, image_nums=8, batch_size=2))
+train_dataloader.append(make_DataPair(step=step, patch_size=96, image_nums=8, batch_size=1))
+
+val_dataloader = make_DataPair(step=step, patch_size=96, image_nums=2, batch_size=1, val=True)
 
 
 ##########################################
@@ -116,12 +119,8 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 
 # Define the loss function
 criterion = torch.nn.L1Loss()
-
-# Define the optimizer (weight_decaay = L2 regularization parameter)
 optimizer = torch.optim.AdamW(model_restoration.parameters(), lr=3e-6, betas=(0.9, 0.999), weight_decay=1e-4) # lr = 3e-4, betas=(0.9, 0.999), weight_decay=1e-4                      
-
-num_epochs = 50
-# Define the cosine annealing scheduler
+num_epochs = 10
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=1e-8) # eta_min = 1e-6
 
 # Fine-tune the model on your data
@@ -134,36 +133,41 @@ for epoch in range(num_epochs):
     train_loss = 0.0
     model_restoration.train()  # Set the model to training mode
     
-    for batch_idx, (target, data) in enumerate(train_dataloader):
-        data = torch.tensor(data, requires_grad=True)  # Convert data to PyTorch tensor
-        target = torch.tensor(target, requires_grad=True)  # Convert target to PyTorch tensor
-        
-        if torch.cuda.is_available():
-            data = data.cuda()
-            target = target.cuda()
+    for progressive_learning in range(4):
+        for batch_idx, (target, data) in enumerate(train_dataloader[progressive_learning]):
+            data = torch.tensor(data, requires_grad=True)  # Convert data to PyTorch tensor
+            target = torch.tensor(target, requires_grad=True)  # Convert target to PyTorch tensor
+            
+            if torch.cuda.is_available():
+                data = data.cuda()
+                target = target.cuda()
 
-        optimizer.zero_grad()
-        
-        data = data.permute(0, 3, 1, 2)
-        target = target.permute(0, 3, 1, 2)
-        
-        output = model_restoration(data.float())
-        copied_output = output
-        loss = criterion(copied_output, target.float())
-        
-        loss.backward()
-        optimizer.step()
-        
-        # Scheduler update (for learning rate adjustment)
-        scheduler.step()
-        
-        train_loss += loss.item()
-        del data, target, output, copied_output
-        
-        print("Training ..", batch_idx, " / " , len(train_dataloader), end='                                    \r')
-        
-        # GPU temperature
-        time.sleep(0.5)
+            optimizer.zero_grad()
+            
+            
+            data = data.unsqueeze(1)
+            #data = data.permute(0, 3, 1, 2)
+            target = target.unsqueeze(1)
+            #target = target.permute(0, 3, 1, 2)
+            
+            output = model_restoration(data.float())
+            copied_output = output
+            loss = criterion(copied_output, target.float())
+            
+            loss.backward()
+            optimizer.step()
+            
+            # Scheduler update (for learning rate adjustment)
+            scheduler.step()
+            
+            train_loss += loss.item()
+            del data, target, output, copied_output
+            gc.collect()
+            torch.cuda.empty_cache()
+            
+            print("Training ..[", progressive_learning, "]...", batch_idx, " / " , len(train_dataloader[progressive_learning]), end='                                    \r')
+            time.sleep(0.05)
+            
 
     # Validation loop (similar modifications as in the training loop)
     model_restoration.eval()  # Set the model to evaluation mode
@@ -178,23 +182,32 @@ for epoch in range(num_epochs):
                 data = data.cuda()
                 target = target.cuda()
 
-            data = data.permute(0, 3, 1, 2)
-            target = target.permute(0, 3, 1, 2)
+            data = data.unsqueeze(1)
+            #data = data.permute(0, 3, 1, 2)
+            target = target.unsqueeze(1)
+            #target = target.permute(0, 3, 1, 2)
 
             output = model_restoration(data.float())
             copied_output = output
             val_loss += criterion(copied_output, target.float())
-            del data, target, output, copied_output
             
-            # GPU temperature
-            time.sleep(1.0)
+            del data, target, output, copied_output
+            gc.collect()
+            torch.cuda.empty_cache()
+            
 
     val_loss /= len(val_dataloader)
-    train_loss /= len(train_dataloader)
+    train_loss /= (len(train_dataloader[0]) + len(train_dataloader[1]) + len(train_dataloader[2]) + len(train_dataloader[3]))
 
     gc.collect()
     torch.cuda.empty_cache()
     print(f'Epoch: {epoch+1}/{num_epochs}, Train Loss: {train_loss:.60f}, Val Loss: {val_loss:.60f}')
 
     # Save the fine-tuned model
-    torch.save(model_restoration.state_dict(), './pts/'+str(step)+'_'+str(epoch)+'fine_tuned_model10.pt')
+    torch.save(model_restoration.state_dict(), './pts/'+str(step)+'_'+str(epoch)+'fine_tuned_model13.pt')
+    
+    
+end_time = time.time
+time_difference = end_time - str_time
+time_duration = datetime.timedelta(seconds=time_difference)
+print("Learning time:", time_duration)
