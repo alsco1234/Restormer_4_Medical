@@ -174,6 +174,7 @@ for epoch in range(num_epochs):
 
     print(f'Epoch: {epoch+1}/{num_epochs}, Train Loss: {train_loss:.60f}, Val Loss: {val_loss:.60f}')
 
+
 # 3) Save Fine-tuned Weight
     torch.save(model_restoration.state_dict(), './pts/'+str(step)+'_'+str(epoch)+'fine_tuned_model.pt')
     
