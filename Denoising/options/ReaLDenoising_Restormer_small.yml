@@ -12,7 +12,7 @@ network_g:
   inp_channels: 1
   out_channels: 1
   dim: 48
-  num_blocks: [2, 3, 3, 4] #upsampling 6642 니까 [2, 3, 3, 4], 3321로 줄여보자
+  num_blocks: [2, 3, 3, 4] # Pretrain : [4, 6, 6, 8] => Finetuning : [2, 3, 3, 4]
   num_refinement_blocks: 4
   heads: [1,2,4,8]
   ffn_expansion_factor: 2.66
